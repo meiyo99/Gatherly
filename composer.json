@@ -1,0 +1,25 @@
+{
+    "name": "mayureshnaidu/gatherly",
+    "description": "Event planning application for personal celebrations",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mayureshnaidu\\Gatherly\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mayuresh Naidu"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "vlucas/phpdotenv": "^5.6",
+        "phpmailer/phpmailer": "^7.0",
+        "sendgrid/sendgrid": "^8.1"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "^1.5"
+    }
+}

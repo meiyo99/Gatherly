@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+vendor/
+composer.lock
+node_modules/
+
+logs/
+*.log
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+.DS_Store
+Thumbs.db
+
+tmp/
+temp/
+*.tmp
