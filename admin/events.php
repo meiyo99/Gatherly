@@ -152,9 +152,14 @@ $events = $eventModel->getAll();
                                         </ul>
 
                                         <div class="d-flex gap-2">
-                                            <a href="#" class="btn btn-sm btn-outline-primary flex-fill">View</a>
-                                            <a href="#" class="btn btn-sm btn-outline-secondary flex-fill">Edit</a>
-                                            <a href="#" class="btn btn-sm btn-outline-danger flex-fill">Delete</a>
+                                            <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary flex-fill">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                            <a href="<?= BASE_URL ?>/handlers/delete_event_handler.php?id=<?= $event['event_id'] ?>"
+                                               class="btn btn-sm btn-outline-danger flex-fill"
+                                               onclick="return confirm('Are you sure you want to delete this event?');">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </a>
                                         </div>
                                     </div>
                                     <div class="card-footer text-muted small">
