@@ -80,9 +80,14 @@ $events = $eventModel->getAll();
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1><i class="bi bi-calendar-event me-2"></i>All Events</h1>
-                    <a href="<?= BASE_URL ?>/dashboard.php" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="<?= BASE_URL ?>/create_event.php" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Create Event
+                        </a>
+                        <a href="<?= BASE_URL ?>/dashboard.php" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
                 </div>
 
                 <?php if (isset($_SESSION['success'])): ?>
@@ -147,8 +152,14 @@ $events = $eventModel->getAll();
                                         </ul>
 
                                         <div class="d-flex gap-2">
-                                            <a href="#" class="btn btn-sm btn-outline-primary flex-fill">View</a>
-                                            <a href="#" class="btn btn-sm btn-outline-secondary flex-fill">Edit</a>
+                                            <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary flex-fill">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                            <a href="<?= BASE_URL ?>/handlers/delete_event_handler.php?id=<?= $event['event_id'] ?>"
+                                               class="btn btn-sm btn-outline-danger flex-fill"
+                                               onclick="return confirm('Are you sure you want to delete this event?');">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </a>
                                         </div>
                                     </div>
                                     <div class="card-footer text-muted small">

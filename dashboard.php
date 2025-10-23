@@ -96,7 +96,7 @@ $user_role = $_SESSION['role'];
                         <i class="bi bi-calendar-plus text-primary" style="font-size: 3rem;"></i>
                         <h5 class="card-title mt-3">Create Event</h5>
                         <p class="card-text">Plan your next celebration</p>
-                        <a href="#" class="btn btn-primary">Coming Soon</a>
+                        <a href="<?= BASE_URL ?>/create_event.php" class="btn btn-primary">Create Event</a>
                     </div>
                 </div>
             </div>
