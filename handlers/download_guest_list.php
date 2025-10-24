@@ -68,7 +68,7 @@ try {
             ucfirst($guest['status']),
             $guest['plus_ones'],
             $guest['dietary_restrictions'] ?? '',
-            date('M d, Y g:i A', strtotime($guest['response_date']))
+            date('M d, Y', strtotime($guest['response_date']))
         ]);
     }
 
