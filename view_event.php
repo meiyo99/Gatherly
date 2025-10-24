@@ -35,6 +35,13 @@ $isHost = ($event['host_id'] == $_SESSION['user_id']);
 $user_name = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
 $host_name = $host ? $host['first_name'] . ' ' . $host['last_name'] : 'Unknown';
 
+$current_rsvp = null;
+if (!$isHost) {
+    $stmt = $db->prepare("SELECT status FROM rsvps WHERE event_id = :event_id AND guest_id = :user_id");
+    $stmt->execute([':event_id' => $event_id, ':user_id' => $_SESSION['user_id']]);
+    $current_rsvp = $stmt->fetchColumn();
+}
+
 if ($isHost) {
     $stmt = $db->prepare("SELECT status, COUNT(*) as count FROM rsvps WHERE event_id = :event_id GROUP BY status");
     $stmt->execute([':event_id' => $event_id]);
@@ -70,9 +77,9 @@ if ($isHost) {
             border-radius: 0;
         }
         .event-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #0d6efd;
             color: white;
-            padding: 40px;
+            padding: 30px;
             margin-bottom: 30px;
         }
     </style>
@@ -163,16 +170,8 @@ if ($isHost) {
                         </div>
 
                         <div class="mb-4">
-                            <h5>Organized by</h5>
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-                                     style="width: 50px; height: 50px; font-size: 20px;">
-                                    <?= strtoupper(substr($host_name, 0, 1)) ?>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0"><?= htmlspecialchars($host_name) ?></h6>
-                                </div>
-                            </div>
+                            <h6 class="text-muted mb-2"><i class="bi bi-person me-2"></i>Organized by</h6>
+                            <p class="mb-0"><?= htmlspecialchars($host_name) ?></p>
                         </div>
                     </div>
                 </div>
@@ -223,9 +222,14 @@ if ($isHost) {
                                     <span class="badge bg-primary"><?= $total_rsvps ?></span>
                                 </div>
                             </div>
-                            <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary w-100">
-                                <i class="bi bi-download me-2"></i>Download Guest List
-                            </a>
+                            <div class="d-grid gap-2">
+                                <a href="<?= BASE_URL ?>/guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-primary w-100">
+                                    <i class="bi bi-list-ul me-2"></i>View Full Guest List
+                                </a>
+                                <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary w-100">
+                                    <i class="bi bi-download me-2"></i>Download CSV
+                                </a>
+                            </div>
                         </div>
                     </div>
                 <?php else: ?>
@@ -235,15 +239,39 @@ if ($isHost) {
                             <h5 class="mb-0">RSVP</h5>
                         </div>
                         <div class="card-body">
-                            <p class="mb-3">Will you attend this event?</p>
+                            <?php if ($current_rsvp): ?>
+                                <p class="mb-3">
+                                    <strong>Your RSVP:</strong>
+                                    <span class="badge bg-<?php
+                                        echo match($current_rsvp) {
+                                            'yes' => 'success',
+                                            'maybe' => 'warning',
+                                            'no' => 'danger',
+                                            default => 'secondary'
+                                        };
+                                    ?>">
+                                        <?php
+                                            echo match($current_rsvp) {
+                                                'yes' => 'Attending',
+                                                'maybe' => 'Maybe',
+                                                'no' => "Can't Go",
+                                                default => ucfirst($current_rsvp)
+                                            };
+                                        ?>
+                                    </span>
+                                </p>
+                                <p class="mb-3 small text-muted">Change your response:</p>
+                            <?php else: ?>
+                                <p class="mb-3">Will you attend this event?</p>
+                            <?php endif; ?>
                             <div class="d-grid gap-2">
-                                <button class="btn btn-success" onclick="submitRSVP('attending')">
+                                <button class="btn <?= $current_rsvp === 'yes' ? 'btn-success' : 'btn-outline-success' ?>" onclick="submitRSVP('attending')">
                                     <i class="bi bi-check-circle me-2"></i>Attending
                                 </button>
-                                <button class="btn btn-warning" onclick="submitRSVP('maybe')">
+                                <button class="btn <?= $current_rsvp === 'maybe' ? 'btn-warning' : 'btn-outline-warning' ?>" onclick="submitRSVP('maybe')">
                                     <i class="bi bi-question-circle me-2"></i>Maybe
                                 </button>
-                                <button class="btn btn-danger" onclick="submitRSVP('not_attending')">
+                                <button class="btn <?= $current_rsvp === 'no' ? 'btn-danger' : 'btn-outline-danger' ?>" onclick="submitRSVP('not_attending')">
                                     <i class="bi bi-x-circle me-2"></i>Can't Go
                                 </button>
                             </div>
