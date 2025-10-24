@@ -152,6 +152,9 @@ $events = $eventModel->getAll();
                                         </ul>
 
                                         <div class="d-flex gap-2">
+                                            <a href="<?= BASE_URL ?>/view_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-primary flex-fill">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
                                             <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary flex-fill">
                                                 <i class="bi bi-pencil me-1"></i>Edit
                                             </a>
