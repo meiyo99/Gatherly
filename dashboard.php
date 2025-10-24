@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/app/config/Database.php';
 session_start();
 
 // Check if user is logged in
@@ -10,6 +11,24 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_name = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
 $user_role = $_SESSION['role'];
+
+$db = Database::getInstance()->getConnection();
+
+$stmt = $db->prepare("SELECT COUNT(*) as total FROM events WHERE host_id = :user_id");
+$stmt->execute([':user_id' => $_SESSION['user_id']]);
+$total_events = $stmt->fetchColumn();
+
+$stmt = $db->prepare("SELECT COUNT(*) as total FROM events WHERE host_id = :user_id AND event_date >= CURDATE() AND status = 'published'");
+$stmt->execute([':user_id' => $_SESSION['user_id']]);
+$upcoming_events = $stmt->fetchColumn();
+
+$stmt = $db->prepare("SELECT COUNT(*) as total FROM rsvps r INNER JOIN events e ON r.event_id = e.event_id WHERE e.host_id = :user_id");
+$stmt->execute([':user_id' => $_SESSION['user_id']]);
+$total_rsvps = $stmt->fetchColumn();
+
+$stmt = $db->prepare("SELECT * FROM events WHERE host_id = :user_id ORDER BY created_at DESC LIMIT 5");
+$stmt->execute([':user_id' => $_SESSION['user_id']]);
+$recent_events = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,6 +108,33 @@ $user_role = $_SESSION['role'];
             </div>
         </div>
 
+        <div class="row g-4 mt-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-white-50">Total Events</h6>
+                        <h2 class="card-title mb-0"><?= $total_events ?></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-white-50">Upcoming Events</h6>
+                        <h2 class="card-title mb-0"><?= $upcoming_events ?></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-white-50">Total RSVPs</h6>
+                        <h2 class="card-title mb-0"><?= $total_rsvps ?></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 mt-3">
             <div class="col-md-4">
                 <div class="card">
@@ -113,14 +159,77 @@ $user_role = $_SESSION['role'];
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body text-center">
-                        <i class="bi bi-envelope text-warning" style="font-size: 3rem;"></i>
-                        <h5 class="card-title mt-3">Invitations</h5>
-                        <p class="card-text">Respond to RSVPs</p>
-                        <a href="#" class="btn btn-warning">Coming Soon</a>
+                        <i class="bi bi-envelope-check text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">My RSVPs</h5>
+                        <p class="card-text">View and manage RSVPs</p>
+                        <a href="<?= BASE_URL ?>/rsvps.php" class="btn btn-warning">View RSVPs</a>
                     </div>
                 </div>
             </div>
         </div>
+
+        <?php if (count($recent_events) > 0): ?>
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="mb-4">Recent Events</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Date</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recent_events as $event): ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars($event['title']) ?></strong>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-calendar-date me-1"></i>
+                                            <?= date('M d, Y', strtotime($event['event_date'])) ?>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-geo-alt me-1"></i>
+                                            <?= htmlspecialchars($event['location']) ?>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-<?php
+                                                echo match($event['status']) {
+                                                    'published' => 'success',
+                                                    'draft' => 'secondary',
+                                                    'completed' => 'primary',
+                                                    'cancelled' => 'danger',
+                                                    default => 'secondary'
+                                                };
+                                            ?>">
+                                                <?= ucfirst(htmlspecialchars($event['status'])) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="<?= BASE_URL ?>/view_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                            <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
