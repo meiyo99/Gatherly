@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../app/config/Database.php';
+require_once __DIR__ . '/../app/models/Event.php';
+require_once __DIR__ . '/../app/helpers/Email.php';
 session_start();
 
 header('Content-Type: application/json');
@@ -76,6 +78,21 @@ try {
             ':status' => $status,
             ':rsvp_token' => $rsvp_token
         ]);
+    }
+
+    $eventModel = new Event();
+    $event = $eventModel->findById($event_id);
+
+    if ($event) {
+        Email::sendRSVPConfirmation(
+            $guest_email,
+            $guest_name,
+            $event['title'],
+            $event['event_date'],
+            $event['event_time'] ?? '00:00:00',
+            $event['location'],
+            $status
+        );
     }
 
     echo json_encode(['success' => true, 'message' => 'RSVP updated successfully.']);
