@@ -11,8 +11,38 @@ if (!isset($_SESSION['user_id'])) {
 $user_name = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
 $user_role = $_SESSION['role'];
 
+$search = $_GET['search'] ?? '';
+$status_filter = $_GET['status'] ?? '';
+$date_filter = $_GET['date'] ?? '';
+
 $eventModel = new Event();
-$events = $eventModel->getAll();
+$all_events = $eventModel->getAll();
+
+$events = array_filter($all_events, function($event) use ($search, $status_filter, $date_filter) {
+    if (!empty($search)) {
+        $search_lower = strtolower($search);
+        if (stripos($event['title'], $search_lower) === false &&
+            stripos($event['location'], $search_lower) === false) {
+            return false;
+        }
+    }
+
+    if (!empty($status_filter) && $event['status'] !== $status_filter) {
+        return false;
+    }
+
+    if (!empty($date_filter)) {
+        $today = date('Y-m-d');
+        if ($date_filter === 'upcoming' && $event['event_date'] < $today) {
+            return false;
+        }
+        if ($date_filter === 'past' && $event['event_date'] >= $today) {
+            return false;
+        }
+    }
+
+    return true;
+});
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +91,7 @@ $events = $eventModel->getAll();
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="<?= BASE_URL ?>/profile.php">
                             <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($user_name) ?>
                         </a>
                     </li>
@@ -98,6 +128,40 @@ $events = $eventModel->getAll();
                     </div>
                     <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="<?= BASE_URL ?>/events.php">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search" placeholder="Search by title or location"
+                                           value="<?= htmlspecialchars($search) ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="status">
+                                        <option value="">All Statuses</option>
+                                        <option value="published" <?= $status_filter === 'published' ? 'selected' : '' ?>>Published</option>
+                                        <option value="draft" <?= $status_filter === 'draft' ? 'selected' : '' ?>>Draft</option>
+                                        <option value="completed" <?= $status_filter === 'completed' ? 'selected' : '' ?>>Completed</option>
+                                        <option value="cancelled" <?= $status_filter === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="date">
+                                        <option value="">All Dates</option>
+                                        <option value="upcoming" <?= $date_filter === 'upcoming' ? 'selected' : '' ?>>Upcoming</option>
+                                        <option value="past" <?= $date_filter === 'past' ? 'selected' : '' ?>>Past</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-search me-1"></i>Filter
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <?php if (!empty($events) && is_array($events)): ?>
                     <div class="row g-3">

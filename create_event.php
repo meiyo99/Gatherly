@@ -58,7 +58,7 @@ unset($_SESSION['form_data']);
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="<?= BASE_URL ?>/profile.php">
                             <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($user_name) ?>
                         </a>
                     </li>
