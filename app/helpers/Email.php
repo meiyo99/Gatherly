@@ -102,4 +102,43 @@ class Email
 
         return self::send($to, $subject, $htmlContent);
     }
+
+    public static function sendEventInvitation($to, $guestName, $eventTitle, $eventDate, $eventTime, $eventLocation, $hostName, $eventUrl)
+    {
+        $subject = "You're Invited: $eventTitle";
+
+        $htmlContent = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+            <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd;'>
+                <h2 style='color: #0d6efd;'>You're Invited!</h2>
+                <p>Hi $guestName,</p>
+                <p><strong>$hostName</strong> has invited you to the following event:</p>
+
+                <div style='background-color: #f8f9fa; padding: 15px; margin: 20px 0; border-left: 4px solid #0d6efd;'>
+                    <h3 style='margin-top: 0;'>$eventTitle</h3>
+                    <p><strong>Date:</strong> " . date('F d, Y', strtotime($eventDate)) . "</p>
+                    <p><strong>Time:</strong> " . date('g:i A', strtotime($eventTime)) . "</p>
+                    <p><strong>Location:</strong> $eventLocation</p>
+                </div>
+
+                <p style='text-align: center; margin: 30px 0;'>
+                    <a href='$eventUrl' style='background-color: #0d6efd; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        View Event Details
+                    </a>
+                </p>
+
+                <p>We hope to see you there!</p>
+
+                <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'>
+                <p style='font-size: 12px; color: #666;'>
+                    This is an automated message from Gatherly. Please do not reply to this email.
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        return self::send($to, $subject, $htmlContent);
+    }
 }

@@ -3,7 +3,6 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/app/config/Database.php';
 session_start();
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . BASE_URL . '/login.php');
     exit;
@@ -29,12 +28,22 @@ $total_rsvps = $stmt->fetchColumn();
 $stmt = $db->prepare("SELECT * FROM events WHERE host_id = :user_id ORDER BY created_at DESC LIMIT 5");
 $stmt->execute([':user_id' => $_SESSION['user_id']]);
 $recent_events = $stmt->fetchAll();
+
+$stmt = $db->prepare("
+    SELECT i.*, e.title as event_title, e.event_date, e.event_time, e.location, e.event_id
+    FROM invitations i
+    INNER JOIN events e ON i.event_id = e.event_id
+    WHERE i.guest_email = :email
+    ORDER BY i.created_at DESC
+    LIMIT 5
+");
+$stmt->execute([':email' => $_SESSION['email']]);
+$invitations = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Gatherly</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -226,6 +235,37 @@ $recent_events = $stmt->fetchAll();
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (count($invitations) > 0): ?>
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="mb-4">Event Invitations</h3>
+                <div class="row g-3">
+                    <?php foreach ($invitations as $invitation): ?>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><?= htmlspecialchars($invitation['event_title']) ?></h5>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-calendar-date me-2"></i><?= date('M d, Y', strtotime($invitation['event_date'])) ?>
+                                        <?php if (!empty($invitation['event_time']) && $invitation['event_time'] !== '00:00:00'): ?>
+                                            at <?= date('g:i A', strtotime($invitation['event_time'])) ?>
+                                        <?php endif; ?>
+                                    </p>
+                                    <p class="text-muted small mb-3">
+                                        <i class="bi bi-geo-alt me-2"></i><?= htmlspecialchars($invitation['location']) ?>
+                                    </p>
+                                    <a href="<?= BASE_URL ?>/view_event.php?id=<?= $invitation['event_id'] ?>" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye me-1"></i>View Event
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

@@ -57,7 +57,6 @@ if ($isHost) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($event['title']) ?> - Gatherly</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -179,7 +178,6 @@ if ($isHost) {
 
             <div class="col-lg-4">
                 <?php if ($isHost): ?>
-                    <!-- Host View Sidebar -->
                     <div class="card mb-3">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">Event Management</h5>
@@ -232,8 +230,28 @@ if ($isHost) {
                             </div>
                         </div>
                     </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Invite Guests</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="inviteForm">
+                                <div class="mb-3">
+                                    <label for="guest_name" class="form-label">Guest Name</label>
+                                    <input type="text" class="form-control" id="guest_name" name="guest_name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="guest_email" class="form-label">Guest Email</label>
+                                    <input type="email" class="form-control" id="guest_email" name="guest_email" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-envelope me-2"></i>Send Invitation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 <?php else: ?>
-                    <!-- Guest View Sidebar -->
                     <div class="card mb-3">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">RSVP</h5>
@@ -293,6 +311,32 @@ if ($isHost) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        <?php if ($isHost): ?>
+        document.getElementById('inviteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            formData.append('event_id', '<?= $event['event_id'] ?>');
+
+            fetch('<?= BASE_URL ?>/handlers/invite_guest_handler.php', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Invitation sent successfully!');
+                    document.getElementById('inviteForm').reset();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('An error occurred. Please try again.');
+            });
+        });
+        <?php endif; ?>
+
         function submitRSVP(status) {
             fetch('<?= BASE_URL ?>/handlers/rsvp_handler.php', {
                 method: 'POST',
