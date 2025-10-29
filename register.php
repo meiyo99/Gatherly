@@ -2,13 +2,11 @@
 require_once __DIR__ . '/config/config.php';
 session_start();
 
-// Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
     header('Location: ' . BASE_URL . '/dashboard.php');
     exit;
 }
 
-// Get form data from session if redirected with errors
 $form_data = $_SESSION['form_data'] ?? [];
 unset($_SESSION['form_data']);
 ?>
@@ -16,7 +14,6 @@ unset($_SESSION['form_data']);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Gatherly</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -126,7 +123,6 @@ unset($_SESSION['form_data']);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function() {
             const password = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
@@ -142,7 +138,6 @@ unset($_SESSION['form_data']);
             }
         });
 
-        // Password strength indicator
         document.getElementById('password').addEventListener('input', function() {
             const password = this.value;
             const strengthBar = document.getElementById('passwordStrength');
@@ -165,32 +160,27 @@ unset($_SESSION['form_data']);
             }
         });
 
-        // Form validation
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // Reset validation
             this.classList.remove('was-validated');
             const inputs = this.querySelectorAll('input');
             inputs.forEach(input => input.classList.remove('is-invalid'));
 
             let isValid = true;
 
-            // Validate first name
             const firstName = document.getElementById('first_name');
             if (firstName.value.trim() === '') {
                 firstName.classList.add('is-invalid');
                 isValid = false;
             }
 
-            // Validate last name
             const lastName = document.getElementById('last_name');
             if (lastName.value.trim() === '') {
                 lastName.classList.add('is-invalid');
                 isValid = false;
             }
 
-            // Validate email
             const email = document.getElementById('email');
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email.value)) {
@@ -198,7 +188,6 @@ unset($_SESSION['form_data']);
                 isValid = false;
             }
 
-            // Validate password
             const password = document.getElementById('password');
             const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
             if (!passwordRegex.test(password.value)) {
@@ -206,7 +195,6 @@ unset($_SESSION['form_data']);
                 isValid = false;
             }
 
-            // Validate confirm password
             const confirmPassword = document.getElementById('confirm_password');
             if (password.value !== confirmPassword.value) {
                 confirmPassword.classList.add('is-invalid');
@@ -220,7 +208,6 @@ unset($_SESSION['form_data']);
             }
         });
 
-        // Real-time password match validation
         document.getElementById('confirm_password').addEventListener('input', function() {
             const password = document.getElementById('password').value;
             if (this.value !== '' && this.value !== password) {

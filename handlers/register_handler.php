@@ -71,7 +71,6 @@ try {
     require_once __DIR__ . '/../app/config/Database.php';
     $db = Database::getInstance()->getConnection();
 
-    // check if email already exists
     $stmt = $db->prepare("SELECT user_id FROM users WHERE email = ?");
     $stmt->execute([$email]);
 
@@ -103,8 +102,6 @@ try {
     ]);
 
     $user_id = $db->lastInsertId();
-
-    // TODO: need to actually send the verification email here
 
     $_SESSION['success'] = 'Registration successful! Please check your email to verify your account.';
     unset($_SESSION['form_data']);

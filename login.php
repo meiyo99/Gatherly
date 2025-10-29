@@ -16,7 +16,6 @@ unset($_SESSION['form_data']);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Gatherly</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -120,7 +119,6 @@ unset($_SESSION['form_data']);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function() {
             const password = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
@@ -136,18 +134,15 @@ unset($_SESSION['form_data']);
             }
         });
 
-        // Form validation
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // Reset validation
             this.classList.remove('was-validated');
             const inputs = this.querySelectorAll('input[required]');
             inputs.forEach(input => input.classList.remove('is-invalid'));
 
             let isValid = true;
 
-            // Validate email
             const email = document.getElementById('email');
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!email.value.trim() || !emailRegex.test(email.value)) {
