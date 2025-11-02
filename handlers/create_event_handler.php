@@ -71,7 +71,40 @@ $eventData = [
 $eventId = $eventModel->create($eventData);
 
 if ($eventId) {
-    $_SESSION['success'] = 'Event created successfully!';
+    $guest_list = $_SESSION['guest_list'] ?? [];
+
+    if (!empty($guest_list)) {
+        require_once __DIR__ . '/../app/config/Database.php';
+        require_once __DIR__ . '/../app/helpers/Email.php';
+
+        $db = Database::getInstance()->getConnection();
+        $emailHelper = new Email();
+
+        foreach ($guest_list as $guest) {
+            try {
+                $stmt = $db->prepare("INSERT INTO invitations (event_id, guest_email, guest_name, created_at) VALUES (?, ?, ?, NOW())");
+                $stmt->execute([$eventId, $guest['email'], $guest['name']]);
+
+                $eventDetails = $eventModel->findById($eventId);
+                $emailHelper->sendInvitation(
+                    $guest['email'],
+                    $guest['name'],
+                    $eventDetails['title'],
+                    $eventDetails['event_date'],
+                    $eventDetails['event_time'],
+                    $eventDetails['location'],
+                    $eventId
+                );
+            } catch (Exception $e) {
+                error_log("Failed to send invitation to {$guest['email']}: " . $e->getMessage());
+            }
+        }
+    }
+
+    unset($_SESSION['form_data']);
+    unset($_SESSION['guest_list']);
+
+    $_SESSION['success'] = 'Event created successfully!' . (!empty($guest_list) ? ' Invitations sent to ' . count($guest_list) . ' guests.' : '');
     header('Location: ' . BASE_URL . '/events.php');
 } else {
     $_SESSION['error'] = 'Failed to create event. Please try again.';
