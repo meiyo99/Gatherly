@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/app/models/Event.php';
 require_once __DIR__ . '/app/config/Database.php';
+require_once __DIR__ . '/app/helpers/Weather.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -51,7 +52,21 @@ if ($isHost) {
     $maybe = $rsvp_counts['maybe'] ?? 0;
     $not_attending = $rsvp_counts['no'] ?? 0;
     $total_rsvps = $attending + $maybe + $not_attending;
+
+    $stmt = $db->prepare("
+        SELECT u.first_name, u.last_name, u.email, r.status
+        FROM rsvps r
+        INNER JOIN users u ON r.guest_id = u.user_id
+        WHERE r.event_id = :event_id AND r.status = 'yes'
+        LIMIT 4
+    ");
+    $stmt->execute([':event_id' => $event_id]);
+    $attending_guests = $stmt->fetchAll();
 }
+
+// Fetch weather data for the event
+$weatherHelper = new Weather();
+$weather = $weatherHelper->getWeatherForEvent($event['location'], $event['event_date']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,31 +77,188 @@ if ($isHost) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
         }
-        .card {
-            border: 2px solid #ddd;
-            border-radius: 0;
-            box-shadow: none;
+        .event-thumbnail-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #0d6efd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
-        .btn {
-            border-radius: 0;
+        .event-title-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
-        .navbar {
-            border-radius: 0;
+        .event-title-section h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
         }
-        .event-header {
-            background-color: #0d6efd;
+        .event-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .about-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .organizer-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .organizer-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .organizer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #495057;
+        }
+        .sidebar-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .sidebar-card-header {
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .sidebar-card-body {
+            padding: 20px;
+        }
+        .rsvp-stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rsvp-stat.attending {
+            background: #d4edda;
+            color: #155724;
+        }
+        .rsvp-stat.maybe {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .rsvp-stat.not-attending {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .rsvp-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .guest-avatars {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .guest-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .weather-placeholder {
+            background: #0d6efd;
             color: white;
             padding: 30px;
-            margin-bottom: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .weather-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .weather-temp {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .location-map-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+        .btn-event-action {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .btn-event-action.primary {
+            background: #000;
+            color: white;
+            border: none;
+        }
+        .btn-event-action.secondary {
+            background: white;
+            color: #000;
+            border: 2px solid #e9ecef;
+        }
+        .btn-event-action.danger {
+            background: white;
+            color: #dc3545;
+            border: 2px solid #e9ecef;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container-fluid">
-            <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
+            <a class="navbar-brand fw-bold" href="<?= BASE_URL ?>/dashboard.php">
                 <i class="bi bi-calendar-event me-2"></i>Gatherly
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -119,58 +291,78 @@ if ($isHost) {
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <a href="<?= BASE_URL ?>/events.php" class="btn btn-outline-secondary mb-3">
+    <div class="container mt-4 mb-5">
+        <a href="<?= BASE_URL ?>/events.php" class="btn btn-link text-decoration-none mb-3 ps-0">
             <i class="bi bi-arrow-left me-1"></i>Back to Events
         </a>
 
         <div class="row">
             <div class="col-lg-8">
-                <div class="card mb-4">
-                    <div class="event-header">
-                        <h1 class="mb-0"><?= htmlspecialchars($event['title']) ?></h1>
-                        <span class="badge bg-light text-dark mt-2">
-                            <?= ucfirst(htmlspecialchars($event['status'])) ?>
-                        </span>
+                <div class="event-thumbnail-placeholder">
+                    <div>
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <div class="mt-2">Event Thumbnail Placeholder</div>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2"><i class="bi bi-calendar3 me-2"></i>Date & Time</h6>
-                                <p class="mb-0">
-                                    <?= date('F d, Y', strtotime($event['event_date'])) ?>
-                                    <?php if (!empty($event['event_time']) && $event['event_time'] !== '00:00:00'): ?>
-                                        <br><?= date('g:i A', strtotime($event['event_time'])) ?>
-                                    <?php endif; ?>
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2"><i class="bi bi-geo-alt me-2"></i>Location</h6>
-                                <p class="mb-0"><?= htmlspecialchars($event['location']) ?></p>
-                            </div>
-                        </div>
+                </div>
 
-                        <?php if (!empty($event['description'])): ?>
-                            <div class="mb-4">
-                                <h5>About This Event</h5>
-                                <p><?= nl2br(htmlspecialchars($event['description'])) ?></p>
-                            </div>
+                <div class="event-title-section">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h1><?= htmlspecialchars($event['title']) ?></h1>
+                        <?php if ($isHost): ?>
+                        <div class="d-flex gap-2">
+                            <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="<?= BASE_URL ?>/handlers/delete_event_handler.php?id=<?= $event['event_id'] ?>"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Are you sure?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
                         <?php endif; ?>
-
-                        <div class="mb-4">
-                            <h6 class="text-muted mb-2"><i class="bi bi-people me-2"></i>Capacity</h6>
-                            <p class="mb-0">
-                                <?php if ($event['max_guests'] > 0): ?>
-                                    Maximum <?= (int)$event['max_guests'] ?> guests
-                                <?php else: ?>
-                                    Unlimited
-                                <?php endif; ?>
-                            </p>
+                    </div>
+                    <div class="event-meta mt-3">
+                        <div class="event-meta-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span><?= date('F d, Y', strtotime($event['event_date'])) ?></span>
                         </div>
+                        <div class="event-meta-item">
+                            <i class="bi bi-clock"></i>
+                            <span>
+                                <?php if (!empty($event['event_time']) && $event['event_time'] !== '00:00:00'): ?>
+                                    <?= date('g:i A', strtotime($event['event_time'])) ?> - <?= date('g:i A', strtotime($event['event_time'] . ' +2 hours')) ?> PST
+                                <?php else: ?>
+                                    Time TBD
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <div class="event-meta-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span><?= htmlspecialchars($event['location']) ?></span>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="mb-4">
-                            <h6 class="text-muted mb-2"><i class="bi bi-person me-2"></i>Organized by</h6>
-                            <p class="mb-0"><?= htmlspecialchars($host_name) ?></p>
+                <div class="about-section">
+                    <h5 class="mb-3">About This Event</h5>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        <?php if (!empty($event['description'])): ?>
+                            <?= nl2br(htmlspecialchars($event['description'])) ?>
+                        <?php else: ?>
+                            No description provided for this event.
+                        <?php endif; ?>
+                    </p>
+                </div>
+
+                <div class="organizer-section">
+                    <h6 class="mb-3">Organized by</h6>
+                    <div class="organizer-profile">
+                        <div class="organizer-avatar">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold"><?= htmlspecialchars($host_name) ?></div>
+                            <small class="text-muted">127 events hosted</small>
                         </div>
                     </div>
                 </div>
@@ -178,133 +370,275 @@ if ($isHost) {
 
             <div class="col-lg-4">
                 <?php if ($isHost): ?>
-                    <div class="card mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">Event Management</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil me-2"></i>Edit Event
-                                </a>
-                                <a href="<?= BASE_URL ?>/handlers/delete_event_handler.php?id=<?= $event['event_id'] ?>"
-                                   class="btn btn-outline-danger"
-                                   onclick="return confirm('Are you sure you want to delete this event?');">
-                                    <i class="bi bi-trash me-2"></i>Delete Event
-                                </a>
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Guest RSVPs</div>
+                    <div class="sidebar-card-body">
+                        <div class="rsvp-stat attending">
+                            <div>
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <span class="rsvp-number"><?= $attending ?></span>
                             </div>
+                            <div class="small">Attending</div>
                         </div>
-                    </div>
+                        <div class="rsvp-stat maybe">
+                            <div>
+                                <i class="bi bi-clock-fill me-2"></i>
+                                <span class="rsvp-number"><?= $maybe ?></span>
+                            </div>
+                            <div class="small">Maybe</div>
+                        </div>
+                        <div class="rsvp-stat not-attending">
+                            <div>
+                                <i class="bi bi-x-circle-fill me-2"></i>
+                                <span class="rsvp-number"><?= $not_attending ?></span>
+                            </div>
+                            <div class="small">Can't Attend</div>
+                        </div>
 
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Guest RSVPs</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span><i class="bi bi-check-circle text-success me-2"></i>Attending</span>
-                                    <span class="badge bg-success"><?= $attending ?></span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span><i class="bi bi-question-circle text-warning me-2"></i>Maybe</span>
-                                    <span class="badge bg-warning"><?= $maybe ?></span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span><i class="bi bi-x-circle text-danger me-2"></i>Can't Go</span>
-                                    <span class="badge bg-danger"><?= $not_attending ?></span>
-                                </div>
-                                <hr>
-                                <div class="d-flex justify-content-between align-items-center fw-bold">
-                                    <span>Total Responses</span>
-                                    <span class="badge bg-primary"><?= $total_rsvps ?></span>
-                                </div>
+                        <?php if (!empty($attending_guests)): ?>
+                        <div class="guest-avatars">
+                            <?php foreach ($attending_guests as $guest): ?>
+                            <div class="guest-avatar" title="<?= htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']) ?>">
+                                <?= strtoupper(substr($guest['first_name'], 0, 1)) ?>
                             </div>
-                            <div class="d-grid gap-2">
-                                <a href="<?= BASE_URL ?>/guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-primary w-100">
-                                    <i class="bi bi-list-ul me-2"></i>View Full Guest List
-                                </a>
-                                <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-sm btn-outline-primary w-100">
-                                    <i class="bi bi-download me-2"></i>Download CSV
-                                </a>
+                            <?php endforeach; ?>
+                            <?php if ($attending > 4): ?>
+                            <div class="guest-avatar" style="background: #495057;">
+                                +<?= $attending - 4 ?>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Invite Guests</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="inviteForm">
-                                <div class="mb-3">
-                                    <label for="guest_name" class="form-label">Guest Name</label>
-                                    <input type="text" class="form-control" id="guest_name" name="guest_name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="guest_email" class="form-label">Guest Email</label>
-                                    <input type="email" class="form-control" id="guest_email" name="guest_email" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-envelope me-2"></i>Send Invitation
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <div class="card mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">RSVP</h5>
-                        </div>
-                        <div class="card-body">
-                            <?php if ($current_rsvp): ?>
-                                <p class="mb-3">
-                                    <strong>Your RSVP:</strong>
-                                    <span class="badge bg-<?php
-                                        echo match($current_rsvp) {
-                                            'yes' => 'success',
-                                            'maybe' => 'warning',
-                                            'no' => 'danger',
-                                            default => 'secondary'
-                                        };
-                                    ?>">
-                                        <?php
-                                            echo match($current_rsvp) {
-                                                'yes' => 'Attending',
-                                                'maybe' => 'Maybe',
-                                                'no' => "Can't Go",
-                                                default => ucfirst($current_rsvp)
-                                            };
-                                        ?>
-                                    </span>
-                                </p>
-                                <p class="mb-3 small text-muted">Change your response:</p>
-                            <?php else: ?>
-                                <p class="mb-3">Will you attend this event?</p>
                             <?php endif; ?>
-                            <div class="d-grid gap-2">
-                                <button class="btn <?= $current_rsvp === 'yes' ? 'btn-success' : 'btn-outline-success' ?>" onclick="submitRSVP('attending')">
-                                    <i class="bi bi-check-circle me-2"></i>Attending
-                                </button>
-                                <button class="btn <?= $current_rsvp === 'maybe' ? 'btn-warning' : 'btn-outline-warning' ?>" onclick="submitRSVP('maybe')">
-                                    <i class="bi bi-question-circle me-2"></i>Maybe
-                                </button>
-                                <button class="btn <?= $current_rsvp === 'no' ? 'btn-danger' : 'btn-outline-danger' ?>" onclick="submitRSVP('not_attending')">
-                                    <i class="bi bi-x-circle me-2"></i>Can't Go
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                <?php endif; ?>
+                        <?php endif; ?>
 
-                <div class="card mb-3">
-                    <div class="card-body text-center">
-                        <p class="text-muted mb-1">Event ID: #<?= $event['event_id'] ?></p>
-                        <small class="text-muted">
-                            Created: <?= date('M d, Y', strtotime($event['created_at'])) ?>
+                        <a href="<?= BASE_URL ?>/guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-outline-secondary w-100 mt-3">
+                            View All Guests
+                        </a>
+                        <small class="text-muted d-block text-center mt-2">
+                            <?= $total_rsvps ?> guests invited
                         </small>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3">Invite Guests</h6>
+                        <form id="inviteForm">
+                            <div class="mb-3">
+                                <label for="guest_name" class="form-label small">Guest Name</label>
+                                <input type="text" class="form-control form-control-sm" id="guest_name" name="guest_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="guest_email" class="form-label small">Guest Email</label>
+                                <input type="email" class="form-control form-control-sm" id="guest_email" name="guest_email" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 btn-sm">
+                                <i class="bi bi-envelope me-2"></i>Send Invitation
+                            </button>
+                        </form>
                     </div>
                 </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Weather Forecast</div>
+                    <div class="sidebar-card-body">
+                        <?php if ($weather): ?>
+                            <!-- Display actual weather data from API -->
+                            <div class="weather-placeholder">
+                                <div class="weather-icon">
+                                    <i class="<?= Weather::getIconClass($weather['icon']) ?>"></i>
+                                </div>
+                                <div class="weather-temp"><?= $weather['temp'] ?>°F</div>
+                                <div class="mt-2"><?= htmlspecialchars($weather['description']) ?></div>
+                                <div class="mt-3 small">
+                                    <div>High: <?= $weather['temp_max'] ?>°F &nbsp;&nbsp; Low: <?= $weather['temp_min'] ?>°F</div>
+                                    <div>Humidity: <?= $weather['humidity'] ?>% &nbsp;&nbsp; Wind: <?= $weather['wind_speed'] ?> mph</div>
+                                </div>
+                                <?php if (!$weather['is_forecast']): ?>
+                                    <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-info-circle"></i> Showing current weather
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <!-- Fallback if weather data unavailable -->
+                            <div class="weather-placeholder">
+                                <div class="text-muted">
+                                    <i class="bi bi-cloud" style="font-size: 2rem;"></i>
+                                    <div class="mt-2 small">Weather data unavailable</div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Location Details</div>
+                    <div class="sidebar-card-body">
+                        <?php if (GOOGLE_MAPS_KEY): ?>
+                            <!-- Embed Google Maps iframe for the event location -->
+                            <div class="location-map-container">
+                                <iframe
+                                    width="100%"
+                                    height="200"
+                                    style="border:0; border-radius: 6px;"
+                                    loading="lazy"
+                                    allowfullscreen
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    src="https://www.google.com/maps/embed/v1/place?key=<?= GOOGLE_MAPS_KEY ?>&q=<?= urlencode($event['location']) ?>">
+                                </iframe>
+                            </div>
+                        <?php else: ?>
+                            <!-- Fallback if API key not configured -->
+                            <div class="location-map-placeholder">
+                                <div class="text-center">
+                                    <i class="bi bi-map" style="font-size: 2rem;"></i>
+                                    <div class="mt-2">Map unavailable</div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        <div class="mt-3">
+                            <strong><?= htmlspecialchars($event['location']) ?></strong>
+                        </div>
+                        <!-- Directions button opens Google Maps in new tab -->
+                        <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($event['location']) ?>"
+                           target="_blank"
+                           class="btn btn-outline-secondary w-100 mt-3">
+                            <i class="bi bi-geo-alt-fill me-2"></i>Get Directions
+                        </a>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Event Management</div>
+                    <div class="sidebar-card-body">
+                        <button class="btn btn-event-action primary">
+                            Send Update to Guests
+                        </button>
+                        <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-event-action secondary">
+                            Edit Event Details
+                        </a>
+                        <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event['event_id'] ?>" class="btn btn-event-action secondary">
+                            Download Guest List
+                        </a>
+                        <a href="<?= BASE_URL ?>/handlers/delete_event_handler.php?id=<?= $event['event_id'] ?>"
+                           class="btn btn-event-action danger"
+                           onclick="return confirm('Are you sure you want to cancel this event?');">
+                            Cancel Event
+                        </a>
+                    </div>
+                </div>
+
+                <?php else: ?>
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">RSVP</div>
+                    <div class="sidebar-card-body">
+                        <?php if ($current_rsvp): ?>
+                            <p class="mb-3">
+                                <strong>Your RSVP:</strong>
+                                <span class="badge bg-<?php
+                                    echo match($current_rsvp) {
+                                        'yes' => 'success',
+                                        'maybe' => 'warning',
+                                        'no' => 'danger',
+                                        default => 'secondary'
+                                    };
+                                ?>">
+                                    <?php
+                                        echo match($current_rsvp) {
+                                            'yes' => 'Attending',
+                                            'maybe' => 'Maybe',
+                                            'no' => "Can't Go",
+                                            default => ucfirst($current_rsvp)
+                                        };
+                                    ?>
+                                </span>
+                            </p>
+                            <p class="mb-3 small text-muted">Change your response:</p>
+                        <?php else: ?>
+                            <p class="mb-3">Will you attend this event?</p>
+                        <?php endif; ?>
+                        <div class="d-grid gap-2">
+                            <button class="btn <?= $current_rsvp === 'yes' ? 'btn-success' : 'btn-outline-success' ?>" onclick="submitRSVP('attending')">
+                                <i class="bi bi-check-circle me-2"></i>Attending
+                            </button>
+                            <button class="btn <?= $current_rsvp === 'maybe' ? 'btn-warning' : 'btn-outline-warning' ?>" onclick="submitRSVP('maybe')">
+                                <i class="bi bi-question-circle me-2"></i>Maybe
+                            </button>
+                            <button class="btn <?= $current_rsvp === 'no' ? 'btn-danger' : 'btn-outline-danger' ?>" onclick="submitRSVP('not_attending')">
+                                <i class="bi bi-x-circle me-2"></i>Can't Go
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Weather Forecast</div>
+                    <div class="sidebar-card-body">
+                        <?php if ($weather): ?>
+                            <!-- Display actual weather data from API -->
+                            <div class="weather-placeholder">
+                                <div class="weather-icon">
+                                    <i class="<?= Weather::getIconClass($weather['icon']) ?>"></i>
+                                </div>
+                                <div class="weather-temp"><?= $weather['temp'] ?>°F</div>
+                                <div class="mt-2"><?= htmlspecialchars($weather['description']) ?></div>
+                                <div class="mt-3 small">
+                                    <div>High: <?= $weather['temp_max'] ?>°F &nbsp;&nbsp; Low: <?= $weather['temp_min'] ?>°F</div>
+                                    <div>Humidity: <?= $weather['humidity'] ?>% &nbsp;&nbsp; Wind: <?= $weather['wind_speed'] ?> mph</div>
+                                </div>
+                                <?php if (!$weather['is_forecast']): ?>
+                                    <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-info-circle"></i> Showing current weather
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <!-- Fallback if weather data unavailable -->
+                            <div class="weather-placeholder">
+                                <div class="text-muted">
+                                    <i class="bi bi-cloud" style="font-size: 2rem;"></i>
+                                    <div class="mt-2 small">Weather data unavailable</div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">Location Details</div>
+                    <div class="sidebar-card-body">
+                        <?php if (GOOGLE_MAPS_KEY): ?>
+                            <!-- Embed Google Maps iframe for the event location -->
+                            <div class="location-map-container">
+                                <iframe
+                                    width="100%"
+                                    height="200"
+                                    style="border:0; border-radius: 6px;"
+                                    loading="lazy"
+                                    allowfullscreen
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    src="https://www.google.com/maps/embed/v1/place?key=<?= GOOGLE_MAPS_KEY ?>&q=<?= urlencode($event['location']) ?>">
+                                </iframe>
+                            </div>
+                        <?php else: ?>
+                            <!-- Fallback if API key not configured -->
+                            <div class="location-map-placeholder">
+                                <div class="text-center">
+                                    <i class="bi bi-map" style="font-size: 2rem;"></i>
+                                    <div class="mt-2">Map unavailable</div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        <div class="mt-3">
+                            <strong><?= htmlspecialchars($event['location']) ?></strong>
+                        </div>
+                        <!-- Directions button opens Google Maps in new tab -->
+                        <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($event['location']) ?>"
+                           target="_blank"
+                           class="btn btn-outline-secondary w-100 mt-3">
+                            <i class="bi bi-geo-alt-fill me-2"></i>Get Directions
+                        </a>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
