@@ -28,6 +28,16 @@ $stmt = $db->prepare("
 ");
 $stmt->execute([':user_id' => $_SESSION['user_id']]);
 $rsvps = $stmt->fetchAll();
+
+foreach ($rsvps as &$rsvp) {
+    $stmt_attendees = $db->prepare("
+        SELECT COUNT(*) as count
+        FROM rsvps
+        WHERE event_id = ? AND status = 'yes'
+    ");
+    $stmt_attendees->execute([$rsvp['event_id']]);
+    $rsvp['attendees'] = $stmt_attendees->fetch()['count'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,168 +48,363 @@ $rsvps = $stmt->fetchAll();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
-        .card {
-            border: 2px solid #ddd;
-            border-radius: 0;
-            box-shadow: none;
+        .sidebar {
+            background-color: #2c3e50;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
         }
-        .btn {
-            border-radius: 0;
+        .sidebar-brand {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .navbar {
-            border-radius: 0;
+        .sidebar-nav {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-footer {
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-item {
+            margin: 5px 0;
+        }
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .sidebar-nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-link.active {
+            background-color: #000;
+            color: white;
+        }
+        .sidebar-nav-link i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        .main-content {
+            margin-left: 200px;
+            padding: 40px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .page-header-content {
+            flex: 1;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .profile-button {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #495057;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .profile-button:hover {
+            background: #f8f9fa;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+        .event-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 25px;
+        }
+        .event-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .event-content {
+            flex: 1;
+        }
+        .event-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #212529;
+        }
+        .event-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        .event-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .event-meta-item i {
+            color: #adb5bd;
+        }
+        .event-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+            min-width: 150px;
+        }
+        .rsvp-status {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .rsvp-status.attending {
+            background: #d4edda;
+            color: #155724;
+        }
+        .rsvp-status.maybe {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .rsvp-status.declined {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .event-attendees {
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .btn-view-details {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            font-weight: 500;
+            background: white;
+            color: #000;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+        .btn-view-details:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            color: #000;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 8px;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+        .empty-state h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            color: #6c757d;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
-                <i class="bi bi-calendar-event me-2"></i>Gatherly
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-brand">Gatherly</div>
+        <ul class="sidebar-nav">
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/dashboard.php" class="sidebar-nav-link">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/events.php" class="sidebar-nav-link">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Events</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/invitations.php" class="sidebar-nav-link">
+                    <i class="bi bi-envelope"></i>
+                    <span>Invitations</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/rsvps.php" class="sidebar-nav-link active">
+                    <i class="bi bi-check-circle"></i>
+                    <span>RSVPs</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="<?= BASE_URL ?>/profile.php" class="sidebar-nav-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/dashboard.php">
-                            <i class="bi bi-house-door me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/events.php">
-                            <i class="bi bi-calendar-check me-1"></i>My Events
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="<?= BASE_URL ?>/rsvps.php">
-                            <i class="bi bi-envelope-check me-1"></i>My RSVPs
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/profile.php">
-                            <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($user_name) ?>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/handlers/logout_handler.php">
-                            <i class="bi bi-box-arrow-right me-1"></i>Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <a href="<?= BASE_URL ?>/handlers/logout_handler.php" class="sidebar-nav-link">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
         </div>
-    </nav>
+    </div>
 
-    <div class="container mt-5">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h1>My RSVPs</h1>
-                    <a href="<?= BASE_URL ?>/dashboard.php" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                    </a>
-                </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <div class="page-header-content">
+                <h1 class="page-title">My RSVPs</h1>
+                <p class="page-subtitle">Events you've responded to</p>
+            </div>
+            <div class="header-actions">
+                <a href="<?= BASE_URL ?>/profile.php" class="profile-button" title="Profile">
+                    <i class="bi bi-person-circle"></i>
+                </a>
             </div>
         </div>
+
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <?= htmlspecialchars($_SESSION['success']) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
 
         <?php if (count($rsvps) > 0): ?>
-            <div class="row">
-                <?php foreach ($rsvps as $rsvp): ?>
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><?= htmlspecialchars($rsvp['title']) ?></h5>
-                                <span class="badge bg-<?php
-                                    echo match($rsvp['rsvp_status']) {
-                                        'yes' => 'success',
-                                        'maybe' => 'warning',
-                                        'no' => 'danger',
-                                        default => 'secondary'
-                                    };
-                                ?>">
+            <?php foreach ($rsvps as $rsvp): ?>
+                <?php
+                $today = date('Y-m-d');
+                $event_status = ($rsvp['event_date'] >= $today) ? 'upcoming' : 'completed';
+                $event_status_text = ($rsvp['event_date'] >= $today) ? 'Upcoming' : 'Past';
+
+                $rsvp_status_class = match($rsvp['rsvp_status']) {
+                    'yes' => 'attending',
+                    'maybe' => 'maybe',
+                    'no' => 'declined',
+                    default => 'maybe'
+                };
+
+                $rsvp_status_text = match($rsvp['rsvp_status']) {
+                    'yes' => 'Attending',
+                    'maybe' => 'Maybe',
+                    'no' => "Can't Go",
+                    default => ucfirst($rsvp['rsvp_status'])
+                };
+                ?>
+                <div class="event-card">
+                    <div class="event-thumbnail">Event</div>
+                    <div class="event-content">
+                        <h3 class="event-title"><?= htmlspecialchars($rsvp['title']) ?></h3>
+                        <?php if (!empty($rsvp['description'])): ?>
+                            <p class="event-description">
+                                <?= htmlspecialchars(substr($rsvp['description'], 0, 150)) ?>
+                                <?= strlen($rsvp['description']) > 150 ? '...' : '' ?>
+                            </p>
+                        <?php endif; ?>
+                        <div class="event-meta">
+                            <div class="event-meta-item">
+                                <i class="bi bi-calendar3"></i>
+                                <span><?= date('F d, Y', strtotime($rsvp['event_date'])) ?></span>
+                            </div>
+                            <div class="event-meta-item">
+                                <i class="bi bi-clock"></i>
+                                <span>
                                     <?php
-                                        echo match($rsvp['rsvp_status']) {
-                                            'yes' => 'Attending',
-                                            'maybe' => 'Maybe',
-                                            'no' => "Can't Go",
-                                            default => ucfirst($rsvp['rsvp_status'])
-                                        };
+                                        if (!empty($rsvp['event_time']) && $rsvp['event_time'] !== '00:00:00') {
+                                            echo date('g:i A', strtotime($rsvp['event_time']));
+                                        } else {
+                                            echo 'All day';
+                                        }
                                     ?>
                                 </span>
                             </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled mb-3">
-                                    <li class="mb-2">
-                                        <i class="bi bi-calendar-date text-primary me-2"></i>
-                                        <strong>Date:</strong>
-                                        <?php
-                                            echo date('M d, Y', strtotime($rsvp['event_date']));
-                                            if (!empty($rsvp['event_time']) && $rsvp['event_time'] !== '00:00:00') {
-                                                echo ' at ' . date('g:i A', strtotime($rsvp['event_time']));
-                                            }
-                                        ?>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="bi bi-geo-alt text-danger me-2"></i>
-                                        <strong>Location:</strong> <?= htmlspecialchars($rsvp['location']) ?>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="bi bi-person text-info me-2"></i>
-                                        <strong>Host:</strong> <?= htmlspecialchars($rsvp['host_first_name'] . ' ' . $rsvp['host_last_name']) ?>
-                                    </li>
-                                    <li class="mb-2">
-                                        <i class="bi bi-clock text-success me-2"></i>
-                                        <strong>RSVP'd:</strong> <?= date('M d, Y', strtotime($rsvp['response_date'])) ?>
-                                    </li>
-                                </ul>
-
-                                <?php if (!empty($rsvp['description'])): ?>
-                                    <p class="text-muted small mb-3">
-                                        <?= htmlspecialchars(mb_substr($rsvp['description'], 0, 150)) ?>
-                                        <?= strlen($rsvp['description']) > 150 ? '...' : '' ?>
-                                    </p>
-                                <?php endif; ?>
-
-                                <div class="d-flex gap-2">
-                                    <a href="<?= BASE_URL ?>/view_event.php?id=<?= $rsvp['event_id'] ?>" class="btn btn-sm btn-primary flex-fill">
-                                        <i class="bi bi-eye me-1"></i>View Event
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-secondary flex-fill"
-                                            onclick="changeRSVP(<?= $rsvp['event_id'] ?>)">
-                                        <i class="bi bi-pencil me-1"></i>Change RSVP
-                                    </button>
-                                </div>
+                            <div class="event-meta-item">
+                                <i class="bi bi-geo-alt"></i>
+                                <span><?= htmlspecialchars($rsvp['location']) ?></span>
+                            </div>
+                            <div class="event-meta-item">
+                                <i class="bi bi-person"></i>
+                                <span><?= htmlspecialchars($rsvp['host_first_name'] . ' ' . $rsvp['host_last_name']) ?></span>
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body text-center py-5">
-                            <i class="bi bi-envelope-x text-muted" style="font-size: 4rem;"></i>
-                            <h4 class="mt-3">No RSVPs Yet</h4>
-                            <p class="text-muted">You haven't RSVP'd to any events yet.</p>
-                        </div>
+                    <div class="event-actions">
+                        <span class="rsvp-status <?= $rsvp_status_class ?>"><?= $rsvp_status_text ?></span>
+                        <span class="event-attendees"><?= $rsvp['attendees'] ?> RSVPs</span>
+                        <a href="<?= BASE_URL ?>/view_event.php?id=<?= $rsvp['event_id'] ?>" class="btn-view-details">View Details</a>
                     </div>
                 </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="empty-state">
+                <i class="bi bi-envelope-x"></i>
+                <h3>No RSVPs Yet</h3>
+                <p>You haven't RSVP'd to any events yet. Check your invitations!</p>
             </div>
         <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function changeRSVP(eventId) {
-            window.location.href = '<?= BASE_URL ?>/view_event.php?id=' + eventId;
-        }
-    </script>
 </body>
 </html>
