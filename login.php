@@ -107,7 +107,6 @@ unset($_SESSION['form_data']);
                     </div>
 
                     <div class="text-center">
-                        <a href="#" class="text-decoration-none d-block mb-2">Forgot password?</a>
                         <p class="mb-0">Don't have an account?
                             <a href="<?= BASE_URL ?>/register.php" class="text-decoration-none fw-bold">Register here</a>
                         </p>

@@ -509,9 +509,6 @@ $weather = $weatherHelper->getWeatherForEvent($event['location'], $event['event_
                 <div class="sidebar-card">
                     <div class="sidebar-card-header">Event Management</div>
                     <div class="sidebar-card-body">
-                        <button class="btn btn-event-action primary">
-                            Send Update to Guests
-                        </button>
                         <a href="<?= BASE_URL ?>/edit_event.php?id=<?= $event['event_id'] ?>" class="btn btn-event-action secondary">
                             Edit Event Details
                         </a>
