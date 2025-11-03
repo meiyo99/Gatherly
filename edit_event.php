@@ -44,136 +44,252 @@ unset($_SESSION['form_data']);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
-        .card {
-            border: 2px solid #ddd;
-            border-radius: 0;
-            box-shadow: none;
+        .sidebar {
+            background-color: #2c3e50;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
         }
-        .btn {
-            border-radius: 0;
+        .sidebar-brand {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .navbar {
-            border-radius: 0;
+        .sidebar-nav {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-footer {
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-item {
+            margin: 5px 0;
+        }
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .sidebar-nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-link.active {
+            background-color: #000;
+            color: white;
+        }
+        .sidebar-nav-link i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        .main-content {
+            margin-left: 200px;
+            padding: 40px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+        .edit-card {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .form-control, .form-select {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 0.2rem rgba(44,62,80,0.1);
+        }
+        .btn-save {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-save:hover {
+            background: #1a252f;
+            color: white;
+        }
+        .btn-cancel {
+            background: white;
+            color: #495057;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 2px solid #dee2e6;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-cancel:hover {
+            background: #f8f9fa;
+            color: #495057;
+        }
+        .alert {
+            border-radius: 6px;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
-                <i class="bi bi-calendar-event me-2"></i>Gatherly
+    <div class="sidebar">
+        <div class="sidebar-brand">Gatherly</div>
+        <ul class="sidebar-nav">
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/dashboard.php" class="sidebar-nav-link">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/events.php" class="sidebar-nav-link active">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Events</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/invitations.php" class="sidebar-nav-link">
+                    <i class="bi bi-envelope"></i>
+                    <span>Invitations</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/rsvps.php" class="sidebar-nav-link">
+                    <i class="bi bi-check-circle"></i>
+                    <span>RSVPs</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="<?= BASE_URL ?>/profile.php" class="sidebar-nav-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/dashboard.php">
-                            <i class="bi bi-house me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/events.php">
-                            <i class="bi bi-calendar-check me-1"></i>Events
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/profile.php">
-                            <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($user_name) ?>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/handlers/logout_handler.php">
-                            <i class="bi bi-box-arrow-right me-1"></i>Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <a href="<?= BASE_URL ?>/handlers/logout_handler.php" class="sidebar-nav-link">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
         </div>
-    </nav>
+    </div>
 
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Event</h4>
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Edit Event</h1>
+            <p class="page-subtitle">Update event details</p>
+        </div>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <?= htmlspecialchars($_SESSION['error']) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
+        <div class="edit-card">
+            <form action="<?= BASE_URL ?>/handlers/edit_event_handler.php" method="POST">
+                <input type="hidden" name="event_id" value="<?= htmlspecialchars($event['event_id']) ?>">
+
+                <div class="mb-4">
+                    <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title"
+                           value="<?= htmlspecialchars($form_data['title'] ?? '') ?>" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="4"><?= htmlspecialchars($form_data['description'] ?? '') ?></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="event_date" class="form-label">Event Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="event_date" name="event_date"
+                               value="<?= htmlspecialchars($form_data['event_date'] ?? '') ?>" required>
                     </div>
-                    <div class="card-body">
-                        <?php if (isset($_SESSION['error'])): ?>
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <?= htmlspecialchars($_SESSION['error']) ?>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                            <?php unset($_SESSION['error']); ?>
-                        <?php endif; ?>
 
-                        <form action="<?= BASE_URL ?>/handlers/edit_event_handler.php" method="POST">
-                            <input type="hidden" name="event_id" value="<?= htmlspecialchars($event['event_id']) ?>">
-
-                            <div class="mb-3">
-                                <label for="title" class="form-label">Event Title <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="title" name="title"
-                                       value="<?= htmlspecialchars($form_data['title'] ?? '') ?>" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="4"><?= htmlspecialchars($form_data['description'] ?? '') ?></textarea>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="event_date" class="form-label">Event Date <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" id="event_date" name="event_date"
-                                           value="<?= htmlspecialchars($form_data['event_date'] ?? '') ?>" required>
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label for="event_time" class="form-label">Event Time</label>
-                                    <input type="time" class="form-control" id="event_time" name="event_time"
-                                           value="<?= htmlspecialchars($form_data['event_time'] ?? '') ?>">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="location" name="location"
-                                       value="<?= htmlspecialchars($form_data['location'] ?? '') ?>" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="max_guests" class="form-label">Maximum Guests</label>
-                                <input type="number" class="form-control" id="max_guests" name="max_guests"
-                                       value="<?= htmlspecialchars($form_data['max_guests'] ?? '') ?>" min="1">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" name="status">
-                                    <option value="draft" <?= ($form_data['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
-                                    <option value="published" <?= ($form_data['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
-                                    <option value="completed" <?= ($form_data['status'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
-                                    <option value="cancelled" <?= ($form_data['status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
-                                </select>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-circle me-1"></i>Update Event
-                                </button>
-                                <a href="<?= BASE_URL ?>/events.php" class="btn btn-secondary">
-                                    <i class="bi bi-x-circle me-1"></i>Cancel
-                                </a>
-                            </div>
-                        </form>
+                    <div class="col-md-6 mb-4">
+                        <label for="event_time" class="form-label">Event Time</label>
+                        <input type="time" class="form-control" id="event_time" name="event_time"
+                               value="<?= htmlspecialchars($form_data['event_time'] ?? '') ?>">
                     </div>
                 </div>
-            </div>
+
+                <div class="mb-4">
+                    <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="location" name="location"
+                           value="<?= htmlspecialchars($form_data['location'] ?? '') ?>" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="max_guests" class="form-label">Maximum Guests</label>
+                    <input type="number" class="form-control" id="max_guests" name="max_guests"
+                           value="<?= htmlspecialchars($form_data['max_guests'] ?? '') ?>" min="1">
+                </div>
+
+                <div class="mb-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="draft" <?= ($form_data['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
+                        <option value="published" <?= ($form_data['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
+                        <option value="completed" <?= ($form_data['status'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
+                        <option value="cancelled" <?= ($form_data['status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-save">
+                        <i class="bi bi-check-circle"></i>
+                        Update Event
+                    </button>
+                    <a href="<?= BASE_URL ?>/events.php" class="btn-cancel">
+                        <i class="bi bi-x-circle"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -68,191 +68,312 @@ $total_rsvps = $attending + $maybe + $not_attending;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
-        .card {
-            border: 2px solid #ddd;
-            border-radius: 0;
-            box-shadow: none;
+        .sidebar {
+            background-color: #2c3e50;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
         }
-        .btn {
-            border-radius: 0;
+        .sidebar-brand {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .navbar {
-            border-radius: 0;
+        .sidebar-nav {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-footer {
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-item {
+            margin: 5px 0;
+        }
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .sidebar-nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-nav-link.active {
+            background-color: #000;
+            color: white;
+        }
+        .sidebar-nav-link i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        .main-content {
+            margin-left: 200px;
+            padding: 40px;
+        }
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-card.success { border-left: 4px solid #28a745; }
+        .stat-card.warning { border-left: 4px solid #ffc107; }
+        .stat-card.danger { border-left: 4px solid #dc3545; }
+        .stat-card.primary { border-left: 4px solid #2c3e50; }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #212529;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .guests-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .guests-card-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
         .table {
-            border: 2px solid #ddd;
+            margin-bottom: 0;
+        }
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+            background: #f8f9fa;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .btn-download {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        .btn-download:hover {
+            background: #218838;
+            color: white;
+        }
+        .btn-back {
+            background: white;
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            border: 2px solid #dee2e6;
+        }
+        .btn-back:hover {
+            background: #f8f9fa;
+            color: #495057;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
-                <i class="bi bi-calendar-event me-2"></i>Gatherly
+    <div class="sidebar">
+        <div class="sidebar-brand">Gatherly</div>
+        <ul class="sidebar-nav">
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/dashboard.php" class="sidebar-nav-link">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/events.php" class="sidebar-nav-link active">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Events</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/invitations.php" class="sidebar-nav-link">
+                    <i class="bi bi-envelope"></i>
+                    <span>Invitations</span>
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="<?= BASE_URL ?>/rsvps.php" class="sidebar-nav-link">
+                    <i class="bi bi-check-circle"></i>
+                    <span>RSVPs</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="<?= BASE_URL ?>/profile.php" class="sidebar-nav-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/dashboard.php">
-                            <i class="bi bi-house-door me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/events.php">
-                            <i class="bi bi-calendar-check me-1"></i>My Events
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/profile.php">
-                            <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($user_name) ?>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= BASE_URL ?>/handlers/logout_handler.php">
-                            <i class="bi bi-box-arrow-right me-1"></i>Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <a href="<?= BASE_URL ?>/handlers/logout_handler.php" class="sidebar-nav-link">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
         </div>
-    </nav>
+    </div>
 
-    <div class="container mt-5">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1>Guest List</h1>
-                        <h5 class="text-muted"><?= htmlspecialchars($event['title']) ?></h5>
-                    </div>
-                    <div>
-                        <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event_id ?>" class="btn btn-success me-2">
-                            <i class="bi bi-download me-2"></i>Download CSV
-                        </a>
-                        <a href="<?= BASE_URL ?>/view_event.php?id=<?= $event_id ?>" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Event
-                        </a>
-                    </div>
-                </div>
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Guest List</h1>
+                <p class="page-subtitle"><?= htmlspecialchars($event['title']) ?></p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="<?= BASE_URL ?>/handlers/download_guest_list.php?id=<?= $event_id ?>" class="btn-download">
+                    <i class="bi bi-download"></i>Download CSV
+                </a>
+                <a href="<?= BASE_URL ?>/view_event.php?id=<?= $event_id ?>" class="btn-back">
+                    <i class="bi bi-arrow-left"></i>Back to Event
+                </a>
             </div>
         </div>
 
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0"><?= $attending ?></h2>
-                        <small>Attending</small>
-                    </div>
-                </div>
+        <div class="stat-cards">
+            <div class="stat-card success">
+                <div class="stat-number"><?= $attending ?></div>
+                <div class="stat-label">Attending</div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0"><?= $maybe ?></h2>
-                        <small>Maybe</small>
-                    </div>
-                </div>
+            <div class="stat-card warning">
+                <div class="stat-number"><?= $maybe ?></div>
+                <div class="stat-label">Maybe</div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-danger text-white">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0"><?= $not_attending ?></h2>
-                        <small>Can't Go</small>
-                    </div>
-                </div>
+            <div class="stat-card danger">
+                <div class="stat-number"><?= $not_attending ?></div>
+                <div class="stat-label">Can't Go</div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0"><?= $total_rsvps ?></h2>
-                        <small>Total Responses</small>
-                    </div>
-                </div>
+            <div class="stat-card primary">
+                <div class="stat-number"><?= $total_rsvps ?></div>
+                <div class="stat-label">Total Responses</div>
             </div>
         </div>
 
         <?php if (count($guests) > 0): ?>
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">All Guests</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Status</th>
-                                        <th>Plus Ones</th>
-                                        <th>Dietary Restrictions</th>
-                                        <th>RSVP Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($guests as $guest): ?>
-                                    <tr>
-                                        <td>
-                                            <strong><?= htmlspecialchars($guest['guest_name']) ?></strong>
-                                        </td>
-                                        <td><?= htmlspecialchars($guest['guest_email']) ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php
-                                                echo match($guest['status']) {
-                                                    'yes' => 'success',
-                                                    'maybe' => 'warning',
-                                                    'no' => 'danger',
-                                                    default => 'secondary'
-                                                };
-                                            ?>">
-                                                <?php
-                                                    echo match($guest['status']) {
-                                                        'yes' => 'Attending',
-                                                        'maybe' => 'Maybe',
-                                                        'no' => "Can't Go",
-                                                        default => ucfirst($guest['status'])
-                                                    };
-                                                ?>
-                                            </span>
-                                        </td>
-                                        <td><?= (int)$guest['plus_ones'] ?></td>
-                                        <td>
-                                            <?php if (!empty($guest['dietary_restrictions'])): ?>
-                                                <?= htmlspecialchars($guest['dietary_restrictions']) ?>
-                                            <?php else: ?>
-                                                <span class="text-muted">None</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?= date('M d, Y', strtotime($guest['response_date'])) ?></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <div class="guests-card">
+            <h2 class="guests-card-header">All Guests</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Plus Ones</th>
+                            <th>Dietary Restrictions</th>
+                            <th>RSVP Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($guests as $guest): ?>
+                        <tr>
+                            <td>
+                                <strong><?= htmlspecialchars($guest['guest_name']) ?></strong>
+                            </td>
+                            <td><?= htmlspecialchars($guest['guest_email']) ?></td>
+                            <td>
+                                <span class="badge bg-<?php
+                                    echo match($guest['status']) {
+                                        'yes' => 'success',
+                                        'maybe' => 'warning',
+                                        'no' => 'danger',
+                                        default => 'secondary'
+                                    };
+                                ?>">
+                                    <?php
+                                        echo match($guest['status']) {
+                                            'yes' => 'Attending',
+                                            'maybe' => 'Maybe',
+                                            'no' => "Can't Go",
+                                            default => ucfirst($guest['status'])
+                                        };
+                                    ?>
+                                </span>
+                            </td>
+                            <td><?= (int)$guest['plus_ones'] ?></td>
+                            <td>
+                                <?php if (!empty($guest['dietary_restrictions'])): ?>
+                                    <?= htmlspecialchars($guest['dietary_restrictions']) ?>
+                                <?php else: ?>
+                                    <span class="text-muted">None</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= $guest['response_date'] ? date('M d, Y', strtotime($guest['response_date'])) : '-' ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
         <?php else: ?>
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
-                        <h4 class="mt-3">No RSVPs Yet</h4>
-                        <p class="text-muted">No one has RSVP'd to this event yet.</p>
-                    </div>
-                </div>
+        <div class="guests-card">
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h4>No RSVPs Yet</h4>
+                <p class="text-muted">No one has RSVP'd to this event yet.</p>
             </div>
         </div>
         <?php endif; ?>
